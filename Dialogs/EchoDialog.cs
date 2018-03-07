@@ -7,6 +7,7 @@ using System.Net.Http;
 using SimpleEchoBot;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 
 namespace Microsoft.Bot.Sample.SimpleEchoBot
 {
@@ -77,7 +78,7 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                 {
                     UserId = context.Activity.From.Properties.GetValue("aadObjectId"),
                     QuestionID = confirm.QuestionId,
-                    AnswerID =  confirm.Id
+                    AnswerID = confirm.Id
                 });
 
                 var r = await questionR.Content.ReadAsAsync<AnswerResultDto>();
@@ -86,24 +87,29 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
 
                 if (!string.IsNullOrEmpty(r.achievementBadge))
                 {
-                    var data = new UserBadgeEventDto()
+                    var data = new List<UserBadgeEventDto>();
+                    data.Add(new UserBadgeEventDto
                     {
+                        id = Guid.NewGuid().ToString(),
                         EventTime = DateTime.Now,
                         EventType = "ch5badge",
                         Subject = "ch5badge",
-                        Data = new UserBadgeDto()
+                        
+                        Data = new EventDataDto
                         {
-                            AchievementBadge = r.achievementBadge,
-                            UserId = (Guid)context.Activity.From.Properties.GetValue("aadObjectId")
+                            UserId = context.Activity.From.Properties.GetValue("aadObjectId").ToString(),
+                            AchievementBadge = r.achievementBadge
                         }
-                    };
+                    });
 
                     _client.DefaultRequestHeaders.Add("aeg-sas-key", "OhKhYUMiFjP6O5UMLa/2lohxMRfqGrScPMLx+4AkHmM=");
-                    _client.DefaultRequestHeaders.Add("Content-Type", "application/json");
+                    _client.DefaultRequestHeaders
+      .Accept
+      .Add(new MediaTypeWithQualityHeaderValue("application/json"));//ACCEPT header
                     var response = await _client.PostAsJsonAsync("https://ch5badge.northeurope-1.eventgrid.azure.net/api/events", data);
                 }
             }
-            
+
 
             context.Wait(MessageReceivedAsync);
         }

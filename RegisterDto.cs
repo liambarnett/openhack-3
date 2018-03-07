@@ -51,17 +51,20 @@ namespace SimpleEchoBot
         public string achievementBadgeIcon { get; set; }
     }
 
-    public class UserBadgeDto
-    {
-        public Guid UserId { get; set; }
-        public string AchievementBadge { get; set; }
-    }
+  
     public class UserBadgeEventDto
     {
+        public string id { get; set; }
         public string EventType { get; set; }
         public string Subject { get; set; }
         public DateTime EventTime { get; set; }
 
-        public UserBadgeDto Data { get; set; }
+        public EventDataDto Data { get; set; }
+        
+    }
+    public class EventDataDto
+    {
+        public string UserId { get; set; }
+        public string AchievementBadge { get; set; }
     }
 }

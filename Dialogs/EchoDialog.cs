@@ -5,6 +5,8 @@ using Microsoft.Bot.Connector;
 using Microsoft.Bot.Builder.Dialogs;
 using System.Net.Http;
 using SimpleEchoBot;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Microsoft.Bot.Sample.SimpleEchoBot
 {
@@ -21,8 +23,8 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
         public async Task MessageReceivedAsync(IDialogContext context, IAwaitable<IMessageActivity> argument)
         {
             var message = await argument;
-
-            if (message.Text == "reset")
+            var msgText = message.RemoveRecipientMention().Replace("\n", "").TrimEnd().TrimStart();
+            if (msgText == "reset")
             {
                 PromptDialog.Confirm(
                     context,
@@ -31,18 +33,28 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                     "Didn't get that!",
                     promptStyle: PromptStyle.Auto);
             }
-            if (message.Text.Equals("question"))
+
+            if (msgText.Equals("question"))
             {
                 using (var _client = new HttpClient())
                 {
                     var questionR = await _client.PostAsJsonAsync("https://msopenhackeu.azurewebsites.net/api/trivia/question", new
                     {
-                        id = message.From.Id
+                        id = ((Activity)message).From.Properties.GetValue("aadObjectId")
                     });
                     var r = await questionR.Content.ReadAsAsync<QuestionDto>();
 
-                    await context.PostAsync($"{r.Text}");
-                    context.Wait(MessageReceivedAsync);
+                    var opt = r.QuestionOptions.Select(x => new QuestionChoicesDto()
+                    {
+                        Id = x.Id,
+                        Value = x.Text,
+                        QuestionId = r.Id
+                    }).ToList();
+
+                    var promptOptions = new PromptOptions<QuestionChoicesDto>(r.Text, options: opt);
+
+                    PromptDialog.Choice(context, OnQuestionAnsweredAsync, promptOptions);
+
                 }
 
             }
@@ -52,6 +64,15 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                 context.Wait(MessageReceivedAsync);
             }
         }
+
+        private async Task OnQuestionAnsweredAsync(IDialogContext context, IAwaitable<object> result)
+        {
+            //todo process answer
+            var confirm = await result;
+
+            context.Wait(MessageReceivedAsync);
+        }
+
 
         public async Task AfterResetAsync(IDialogContext context, IAwaitable<bool> argument)
         {

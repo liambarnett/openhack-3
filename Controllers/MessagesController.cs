@@ -30,7 +30,7 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
             }
             else
             {
-                HandleSystemMessage(activity);
+                await HandleSystemMessage(activity);
             }
             return new HttpResponseMessage(System.Net.HttpStatusCode.Accepted);
         }

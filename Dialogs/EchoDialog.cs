@@ -68,7 +68,23 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
         private async Task OnQuestionAnsweredAsync(IDialogContext context, IAwaitable<object> result)
         {
             //todo process answer
-            var confirm = await result;
+            var confirm = await result as QuestionChoicesDto;
+
+
+            using (var _client = new HttpClient())
+            {
+                var questionR = await _client.PostAsJsonAsync("https://msopenhackeu.azurewebsites.net/api/trivia/answer", new
+                {
+                    id = context.Activity.From.Properties.GetValue("aadObjectId"),
+                    QuestionID = confirm.QuestionId,
+                    AnswerID =  confirm.Id
+                });
+
+                var r = await questionR.Content.ReadAsAsync<AnswerResultDto>();
+                var txtResponse = r.Correct ? "Correct" : "Incorrect";
+                await context.PostAsync($"Result - {context.Activity.From.Name}: {txtResponse}");
+            }
+            
 
             context.Wait(MessageReceivedAsync);
         }

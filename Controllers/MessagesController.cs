@@ -42,7 +42,7 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                 // Implement user deletion here
                 // If we handle user deletion, return a real message
             }
-            else if (message.Type == ActivityTypes.ConversationUpdate && message.MembersAdded.Any(x=>x.Name.Equals("Bot")))
+            else if (message.Type == ActivityTypes.ConversationUpdate && message.MembersAdded != null && message.MembersAdded.Any(x=> x.Name == null))
             {
                 // Handle conversation state changes, like members being added and removed
                 // Use Activity.MembersAdded and Activity.MembersRemoved and Activity.Action for info
@@ -71,6 +71,10 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                 {
                     await httpclient.PostAsJsonAsync("https://msopenhackeu.azurewebsites.net/api/register", JsonConvert.SerializeObject(registerDto));
                 }
+
+                
+                Activity reply = message.CreateReply($"Welcome");
+                var msgToUpdate = await connector.Conversations.ReplyToActivityAsync(reply);
             }
             else if (message.Type == ActivityTypes.ContactRelationUpdate)
             {

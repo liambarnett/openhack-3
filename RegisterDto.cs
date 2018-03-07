@@ -43,4 +43,11 @@ namespace SimpleEchoBot
         }
     }
 
+
+    public class AnswerResultDto
+    {
+        public bool Correct { get; set; }
+        public string achievementBadge { get; set; }
+        public string achievementBadgeIcon { get; set; }
+    }
 }

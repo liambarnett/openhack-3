@@ -62,14 +62,14 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                     TeamId = teamID,
                     Members = members.Select(x => new TeamMemberDto()
                     {
-                        Id = x.Id,
+                        Id = x.Properties.GetValue("objectId").ToString(),
                         Name = x.Name
                     }).ToList()
                 };
 
                 using (var httpclient = new HttpClient())
                 {
-                    await httpclient.PostAsJsonAsync("https://msopenhackeu.azurewebsites.net/api/register", JsonConvert.SerializeObject(registerDto));
+                    var response = await httpclient.PostAsJsonAsync("https://msopenhackeu.azurewebsites.net/api/trivia/register", registerDto);
                 }
 
                 

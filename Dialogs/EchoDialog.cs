@@ -75,7 +75,7 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
             {
                 var questionR = await _client.PostAsJsonAsync("https://msopenhackeu.azurewebsites.net/api/trivia/answer", new
                 {
-                    id = context.Activity.From.Properties.GetValue("aadObjectId"),
+                    UserId = context.Activity.From.Properties.GetValue("aadObjectId"),
                     QuestionID = confirm.QuestionId,
                     AnswerID =  confirm.Id
                 });

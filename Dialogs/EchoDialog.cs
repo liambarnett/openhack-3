@@ -83,6 +83,26 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                 var r = await questionR.Content.ReadAsAsync<AnswerResultDto>();
                 var txtResponse = r.Correct ? "Correct" : "Incorrect";
                 await context.PostAsync($"Result - {context.Activity.From.Name}: {txtResponse}");
+
+                if (!string.IsNullOrEmpty(r.achievementBadge))
+                {
+                    var data = new UserBadgeEventDto()
+                    {
+                        EventTime = DateTime.Now,
+                        EventType = "ch5badge",
+                        Subject = "ch5badge",
+                        Data = new UserBadgeDto()
+                        {
+                            AchievementBadge = r.achievementBadge,
+                            UserId = (Guid)context.Activity.From.Properties.GetValue("aadObjectId")
+                        }
+                    };
+
+                    _client.DefaultRequestHeaders.Add("aeg-sas-token", "OhKhYUMiFjP6O5UMLa/2lohxMRfqGrScPMLx+4AkHmM=");
+                    _client.DefaultRequestHeaders.Add("aeg-sas-key", "jLL2K1SjtPw/+7k+g8Wh+FlnRDPLJkC3CWN/pkuCNBo=");
+                    _client.DefaultRequestHeaders.Add("Content-Type", "application/json");
+                    var response = await _client.PostAsJsonAsync("https://ch5badge.northeurope-1.eventgrid.azure.net/api/events", data);
+                }
             }
             
 

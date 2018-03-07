@@ -50,4 +50,18 @@ namespace SimpleEchoBot
         public string achievementBadge { get; set; }
         public string achievementBadgeIcon { get; set; }
     }
+
+    public class UserBadgeDto
+    {
+        public Guid UserId { get; set; }
+        public string AchievementBadge { get; set; }
+    }
+    public class UserBadgeEventDto
+    {
+        public string EventType { get; set; }
+        public string Subject { get; set; }
+        public DateTime EventTime { get; set; }
+
+        public UserBadgeDto Data { get; set; }
+    }
 }

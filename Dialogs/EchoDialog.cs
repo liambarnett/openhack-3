@@ -85,28 +85,46 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                 var txtResponse = r.Correct ? "Correct" : "Incorrect";
                 await context.PostAsync($"Result - {context.Activity.From.Name}: {txtResponse}");
 
-                if (!string.IsNullOrEmpty(r.achievementBadge))
+                if (r.Correct)
                 {
-                    var data = new List<UserBadgeEventDto>();
-                    data.Add(new UserBadgeEventDto
-                    {
-                        id = Guid.NewGuid().ToString(),
-                        EventTime = DateTime.Now,
-                        EventType = "ch5badge",
-                        Subject = "ch5badge",
-                        
-                        Data = new EventDataDto
-                        {
-                            UserId = context.Activity.From.Properties.GetValue("aadObjectId").ToString(),
-                            AchievementBadge = r.achievementBadge
-                        }
-                    });
+                    var shouldSendEvent = true;
 
-                    _client.DefaultRequestHeaders.Add("aeg-sas-key", "OhKhYUMiFjP6O5UMLa/2lohxMRfqGrScPMLx+4AkHmM=");
-                    _client.DefaultRequestHeaders
-      .Accept
-      .Add(new MediaTypeWithQualityHeaderValue("application/json"));//ACCEPT header
-                    var response = await _client.PostAsJsonAsync("https://ch5badge.northeurope-1.eventgrid.azure.net/api/events", data);
+                    var userId = new Guid(context.Activity.From.Properties.GetValue("aadObjectId").ToString());
+                    if (WebApiApplication.UserBadges.ContainsKey(userId))
+                    {
+                        WebApiApplication.UserBadges.TryGetValue(userId,out string userBadge);
+                        if (string.IsNullOrEmpty(userBadge) || userBadge.Equals(r.achievementBadge))
+                            shouldSendEvent = false;
+                    }
+                    else
+                    {
+                        WebApiApplication.UserBadges.TryAdd(userId, r.achievementBadge);
+                    }
+
+                    if (shouldSendEvent)
+                    {
+                        var data = new List<UserBadgeEventDto>
+                        {
+                            new UserBadgeEventDto
+                            {
+                                id = Guid.NewGuid().ToString(),
+                                EventTime = DateTime.Now,
+                                EventType = "ch5badge",
+                                Subject = "ch5badge",
+
+                                Data = new EventDataDto
+                                {
+                                    UserId = userId.ToString(),
+                                    AchievementBadge = r.achievementBadge
+                                }
+                            }
+                        };
+
+                        _client.DefaultRequestHeaders.Add("aeg-sas-key", "OhKhYUMiFjP6O5UMLa/2lohxMRfqGrScPMLx+4AkHmM=");
+                        _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));//ACCEPT header
+                        var response = await _client.PostAsJsonAsync("https://ch5badge.northeurope-1.eventgrid.azure.net/api/events", data);
+                    }
+
                 }
             }
 

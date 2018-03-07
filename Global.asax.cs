@@ -6,11 +6,24 @@ using Microsoft.Bot.Builder.Azure;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Builder.Dialogs.Internals;
 using Microsoft.Bot.Connector;
+using System.Collections.Generic;
+using System;
+using System.Collections.Concurrent;
 
 namespace SimpleEchoBot
 {
     public class WebApiApplication : System.Web.HttpApplication
     {
+        private static ConcurrentDictionary<Guid, string> _userBadges;
+        public static ConcurrentDictionary<Guid, string> UserBadges
+        {
+            get
+            {
+                if (_userBadges == null)
+                    _userBadges = new ConcurrentDictionary<Guid, string>();
+                return _userBadges;
+            }
+        }
         protected void Application_Start()
         {
             // Bot Storage: This is a great spot to register the private state storage for your bot. 

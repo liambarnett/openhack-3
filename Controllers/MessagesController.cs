@@ -9,12 +9,15 @@ using System.Linq;
 using System;
 using SimpleEchoBot;
 using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace Microsoft.Bot.Sample.SimpleEchoBot
 {
+   
     [BotAuthentication]
     public class MessagesController : ApiController
     {
+       
         /// <summary>
         /// POST: api/Messages
         /// receive a message from a user and send replies

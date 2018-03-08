@@ -24,6 +24,17 @@ namespace SimpleEchoBot
                 return _userBadges;
             }
         }
+
+        private static ConcurrentDictionary<string, string> _userTokens;
+        public static ConcurrentDictionary<string, string> UserTokens
+        {
+            get
+            {
+                if (_userTokens == null)
+                    _userTokens = new ConcurrentDictionary<string, string>();
+                return _userTokens;
+            }
+        }
         protected void Application_Start()
         {
             // Bot Storage: This is a great spot to register the private state storage for your bot. 

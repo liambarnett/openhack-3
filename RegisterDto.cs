@@ -66,5 +66,10 @@ namespace SimpleEchoBot
     {
         public string UserId { get; set; }
         public string AchievementBadge { get; set; }
+
+        public string UserAADID { get; set; }
+        public string UserName { get; set; }
+
+        public string Token { get; set; }
     }
 }

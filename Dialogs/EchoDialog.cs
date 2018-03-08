@@ -8,6 +8,11 @@ using SimpleEchoBot;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
+using BotAuth.AADv2;
+using BotAuth;
+using BotAuth.Dialogs;
+using BotAuth.Models;
+using System.Threading;
 
 namespace Microsoft.Bot.Sample.SimpleEchoBot
 {
@@ -34,9 +39,36 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                     "Didn't get that!",
                     promptStyle: PromptStyle.Auto);
             }
-
-            if (msgText.Equals("question"))
+            else if(msgText.Equals("auth"))
             {
+                // Initialize AuthenticationOptions and forward to AuthDialog for token
+                AuthenticationOptions options = new AuthenticationOptions()
+                {
+                    Authority = "https://login.microsoftonline.com/common",
+                    ClientId = "cfca18bf-9031-4fea-9e83-3a19848a3489",
+                    ClientSecret = "qWST866]%nusgggVUDV67_-",
+                    Scopes = new string[] { "User.ReadWrite" },
+                    RedirectUrl = "https://hack005.ngrok.io/callback",
+                    MagicNumberView = "/magic.html#{0}"
+                };
+                
+                await context.Forward(new AuthDialog(new MSALAuthProvider(), options), async (IDialogContext authContext, IAwaitable<AuthResult> authResult) =>
+                {
+                    var result = await authResult;
+                    WebApiApplication.UserTokens.TryAdd(authContext.Activity.From.Id, result.AccessToken);
+
+                    // Use token to call into service
+                    var json = await new HttpClient().GetWithAuthAsync(result.AccessToken, "https://graph.microsoft.com/v1.0/me");
+                    await authContext.PostAsync($"I'm a simple bot that doesn't do much, but I know your name is {json.Value<string>("displayName")} and your UPN is {json.Value<string>("userPrincipalName")}");
+
+                }, message, CancellationToken.None);
+                
+            }
+            else if (msgText.Equals("question"))
+            {
+
+              
+
                 using (var _client = new HttpClient())
                 {
                     var questionR = await _client.PostAsJsonAsync("https://msopenhackeu.azurewebsites.net/api/trivia/question", new
@@ -61,6 +93,7 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
             }
             else
             {
+                
                 await context.PostAsync($"{this.count++}: You said {message.Text}");
                 context.Wait(MessageReceivedAsync);
             }
@@ -83,16 +116,21 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
 
                 var r = await questionR.Content.ReadAsAsync<AnswerResultDto>();
                 var txtResponse = r.Correct ? "Correct" : "Incorrect";
-                await context.PostAsync($"Result - {context.Activity.From.Name}: {txtResponse}");
 
-                if (r.Correct)
+                string userBadge;
+                var userId = new Guid(context.Activity.From.Properties.GetValue("aadObjectId").ToString());
+                WebApiApplication.UserBadges.TryGetValue(userId, out userBadge);
+
+                await context.PostAsync($"Result - {context.Activity.From.Name}: {txtResponse} - BotMemory Badge: {userBadge}, API Answer Result Badge: {r.achievementBadge}");
+
+                if (true) //r.Correct)
                 {
                     var shouldSendEvent = true;
 
-                    var userId = new Guid(context.Activity.From.Properties.GetValue("aadObjectId").ToString());
+                    
                     if (WebApiApplication.UserBadges.ContainsKey(userId))
                     {
-                        WebApiApplication.UserBadges.TryGetValue(userId,out string userBadge);
+                        
                         if (string.IsNullOrEmpty(userBadge) || userBadge.Equals(r.achievementBadge))
                             shouldSendEvent = false;
                     }
@@ -101,8 +139,11 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                         WebApiApplication.UserBadges.TryAdd(userId, r.achievementBadge);
                     }
 
-                    if (shouldSendEvent)
+                    if (true)//shouldSendEvent)
                     {
+
+                        string userToken = "";
+                        WebApiApplication.UserTokens.TryGetValue(context.Activity.From.Id, out userToken);
                         var data = new List<UserBadgeEventDto>
                         {
                             new UserBadgeEventDto
@@ -115,7 +156,10 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                                 Data = new EventDataDto
                                 {
                                     UserId = userId.ToString(),
-                                    AchievementBadge = r.achievementBadge
+                                    AchievementBadge = r.achievementBadge,
+                                    UserName = context.Activity.From.Name,
+                                    UserAADID = context.Activity.From.Properties.GetValue("aadObjectId").ToString(),
+                                    Token = userToken
                                 }
                             }
                         };
@@ -123,6 +167,7 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                         _client.DefaultRequestHeaders.Add("aeg-sas-key", "OhKhYUMiFjP6O5UMLa/2lohxMRfqGrScPMLx+4AkHmM=");
                         _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));//ACCEPT header
                         var response = await _client.PostAsJsonAsync("https://ch5badge.northeurope-1.eventgrid.azure.net/api/events", data);
+                        await context.PostAsync($"Badge {r.achievementBadge} sent to Azure Event Grid");
                     }
 
                 }
@@ -147,6 +192,8 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
             }
             context.Wait(MessageReceivedAsync);
         }
+
+
 
     }
 }

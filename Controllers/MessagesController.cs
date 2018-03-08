@@ -10,6 +10,9 @@ using System;
 using SimpleEchoBot;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using Microsoft.Bot.Connector.Teams.Models;
+using BotAuth.AADv2;
+using BotAuth;
 
 namespace Microsoft.Bot.Sample.SimpleEchoBot
 {
@@ -40,7 +43,21 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
 
         private async Task<Activity> HandleSystemMessage(Activity message)
         {
-            if (message.Type == ActivityTypes.DeleteUserData)
+            if(message.ServiceUrl == "https://directline.botframework.com/")
+            {
+                string input = "hello world, direct line";
+                
+                Activity userMessage = new Activity
+                {
+                    From = new ChannelAccount(),
+                    Text = input,
+                    Type = Connector.DirectLine.ActivityTypes.Message,
+                    ChannelId = "8c8e13d4-fb54-4777-aea2-7b6ace72bd92"
+                };
+
+                //await Conversation.SendAsync(userMessage, () => new EchoDialog());
+            }
+            else if (message.Type == ActivityTypes.DeleteUserData)
             {
                 // Implement user deletion here
                 // If we handle user deletion, return a real message
@@ -52,7 +69,7 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                 // Not available in all channels
 
                 // Fetch the members in the current conversation
-                //var connector = new ConnectorClient(new Uri("http://hack005.ngrok.io.ngrok.io"));
+                //var connector = new ConnectorClient(new Uri("http://hack005.ngrok.io"));
                 var connector = new ConnectorClient(new Uri(message.ServiceUrl));
                 var members = await connector.Conversations.GetConversationMembersAsync(message.Conversation.Id);
 
@@ -94,5 +111,6 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
 
             return null;
         }
+
     }
 }

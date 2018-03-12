@@ -13,6 +13,10 @@ using System.Collections.Generic;
 using Microsoft.Bot.Connector.Teams.Models;
 using BotAuth.AADv2;
 using BotAuth;
+using Newtonsoft.Json.Linq;
+using Microsoft.Bot.Connector.Teams;
+using System.Net;
+using SimpleEchoBot.Dialogs;
 
 namespace Microsoft.Bot.Sample.SimpleEchoBot
 {
@@ -33,6 +37,51 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
             if (activity != null && activity.GetActivityType() == ActivityTypes.Message)
             {
                 await Conversation.SendAsync(activity, () => new EchoDialog());
+            }
+            else if (activity != null && activity.Type == "invoke")
+            {
+                //await Conversation.SendAsync(activity, () => new SearchResultDialog());
+
+                ComposeExtensionResponse invokeResponse = new ComposeExtensionResponse();
+                // query.Parameters has the parameters sent by client
+                var results = new ComposeExtensionResult()
+                {
+                    AttachmentLayout = "list",
+                    Type = "result",
+                    Attachments = new List<ComposeExtensionAttachment>(),
+                };
+                var query = activity.GetComposeExtensionQueryData();
+                if (query.CommandId != null && query.Parameters != null && query.Parameters.Count > 0)
+                {
+                    var searchText = query.Parameters.First().Value;
+
+                    using (var _client = new HttpClient())
+                    {
+
+                        var res = await _client.GetAsync("https://msopenhackeu.azurewebsites.net/api/trivia/search?k=" + searchText);
+                        var responseText = await res.Content.ReadAsStringAsync();
+                        var att = JsonConvert.DeserializeObject<List<SearchResultDto>>(responseText);
+
+
+                        foreach (var x in att)
+                        {
+                            var heroCard = new HeroCard
+                            {
+                                Title = x.name,
+                                Subtitle = x.achievementBadge,
+                                Text = "Score: " + x.score.ToString(),
+                                Images = new List<CardImage> { new CardImage(x.achievementBadgeIcon) }
+                            };
+
+                            results.Attachments.Add(heroCard.ToAttachment().ToComposeExtensionAttachment());
+
+                        }
+                        invokeResponse.ComposeExtension = results;
+
+                        // Return the response
+                        return Request.CreateResponse<ComposeExtensionResponse>(HttpStatusCode.OK, invokeResponse);
+                    }
+                }
             }
             else
             {

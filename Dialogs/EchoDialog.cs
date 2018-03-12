@@ -59,7 +59,8 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
 
                     // Use token to call into service
                     var json = await new HttpClient().GetWithAuthAsync(result.AccessToken, "https://graph.microsoft.com/v1.0/me");
-                    await authContext.PostAsync($"I'm a simple bot that doesn't do much, but I know your name is {json.Value<string>("displayName")} and your UPN is {json.Value<string>("userPrincipalName")}");
+                    await authContext.PostAsync($"I'm a simple bot that doesn't do much, but I know your name is {json.Value<string>("displayName")} " +
+                        $"and your UPN is {json.Value<string>("userPrincipalName")}");
 
                 }, message, CancellationToken.None);
                 
@@ -122,26 +123,19 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                 WebApiApplication.UserBadges.TryGetValue(userId, out userBadge);
 
                 await context.PostAsync($"Result - {context.Activity.From.Name}: {txtResponse} - BotMemory Badge: {userBadge}, API Answer Result Badge: {r.achievementBadge}");
-
                 if (true) //r.Correct)
                 {
                     var shouldSendEvent = true;
-
-                    
                     if (WebApiApplication.UserBadges.ContainsKey(userId))
                     {
-                        
                         if (string.IsNullOrEmpty(userBadge) || userBadge.Equals(r.achievementBadge))
                             shouldSendEvent = false;
                     }
                     else
-                    {
                         WebApiApplication.UserBadges.TryAdd(userId, r.achievementBadge);
-                    }
 
                     if (true)//shouldSendEvent)
                     {
-
                         string userToken = "";
                         WebApiApplication.UserTokens.TryGetValue(context.Activity.From.Id, out userToken);
                         var data = new List<UserBadgeEventDto>
@@ -152,7 +146,6 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                                 EventTime = DateTime.Now,
                                 EventType = "ch5badge",
                                 Subject = "ch5badge",
-
                                 Data = new EventDataDto
                                 {
                                     UserId = userId.ToString(),

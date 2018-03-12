@@ -72,4 +72,13 @@ namespace SimpleEchoBot
 
         public string Token { get; set; }
     }
+
+    public class SearchResultDto
+    {
+         public Guid id { get; set; }
+    public string name { get; set; }
+        public int score { get; set; }
+        public string achievementBadge { get; set; }
+        public string achievementBadgeIcon { get; set; }
+    }
 }
